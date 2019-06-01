@@ -1,0 +1,29 @@
+import sys
+import xlrd
+import xlwt
+import xlutils
+
+def Replace_FLowJo_Output(Input_Name, Output_Name):
+
+    #Test to see if the a output file already exists
+    File_Exists = True
+    try:
+        Output_File = xlrd.open_workbook(Output_Name)
+    except FileNotFoundError:
+        Excel_Output = xlwt.Workbook()
+        File_Exists = False
+
+    if(File_Exists):
+        Excel_Output = xlutils.copy(Output_File)
+        Output_Sheet = Excel_Output.get_sheet(Output_File.nsheets()+1)
+
+    FlowJo_output = xlrd.open_workbook(Input_Name)
+    FlowJo_Output_Sheet = FlowJo_output.sheet_by_index(0)
+
+    for i in range(FlowJo_Output_Sheet.nrows):
+        print(type(FlowJo_Output_Sheet.cell(i+1,0)))
+        if (FlowJo_Output_Sheet.cell(0,i+1) == "Mean"):
+            break
+
+if __name__ == "__main__":
+    Replace_FLowJo_Output("/Users/siddarthraghuvanshi/Documents/Undergraduate/2019 Summer Job/Zandstra Lab/FlowJoOutput_PreFormat copy.xls", "Test")
