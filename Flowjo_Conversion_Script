@@ -1,29 +1,60 @@
-import sys
+import argparse
 import xlrd
+from xlutils.copy import copy
 import xlwt
-import xlutils
 
 def Replace_FLowJo_Output(Input_Name, Output_Name):
 
+    FlowJo = xlrd.open_workbook(Input_Name)
+    FlowJo_Sheet = FlowJo.sheet_by_index(0)
+
+    Sheet_Name = "FlowJo Output"
+
     #Test to see if the a output file already exists
     File_Exists = True
+    Previous_Position = 0
     try:
         Output_File = xlrd.open_workbook(Output_Name)
     except FileNotFoundError:
         Excel_Output = xlwt.Workbook()
+        Output_Sheet = Excel_Output.add_sheet(Sheet_Name)
         File_Exists = False
 
     if(File_Exists):
-        Excel_Output = xlutils.copy(Output_File)
-        Output_Sheet = Excel_Output.get_sheet(Output_File.nsheets()+1)
+        Output_Sheet = Output_File.sheet_by_index(Output_File.nsheets - 1)
+        Previous_Position = Output_Sheet.nrows + 2
+        Excel_Output = copy(Output_File)
+        Output_Sheet = Excel_Output.get_sheet(Output_File.nsheets - 1)
 
-    FlowJo_output = xlrd.open_workbook(Input_Name)
-    FlowJo_Output_Sheet = FlowJo_output.sheet_by_index(0)
+    Output_Sheet.write(Previous_Position + 0,0, "Run Name")
+    Output_Sheet.write(Previous_Position + 0,1, "Plate Number")
+    Output_Sheet.write(Previous_Position + 0,2, "Well Label")
 
-    for i in range(FlowJo_Output_Sheet.nrows):
-        print(type(FlowJo_Output_Sheet.cell(i+1,0)))
-        if (FlowJo_Output_Sheet.cell(0,i+1) == "Mean"):
+    for i, Run_name in enumerate(FlowJo_Sheet.col_values(0)):
+        Output_Sheet.write(Previous_Position + i + 1, 0, Run_name[3:-7])
+        Output_Sheet.write(Previous_Position + i + 1, 1, Run_name[:2])
+        Output_Sheet.write(Previous_Position + i + 1, 2, Run_name[-6:-4])
+        if (FlowJo_Sheet.cell(i+2,0).value == "Mean"):
+            Output_Sheet.write(Previous_Position + i + 2, 0, FlowJo_Sheet.cell(i+2,0).value)
+            Output_Sheet.write(Previous_Position + i + 3, 0, FlowJo_Sheet.cell(i+3,0).value)
             break
 
+    for i in range(FlowJo_Sheet.ncols - 1):
+        for j, Cell in enumerate(FlowJo_Sheet.col_values(i+1)):
+            if isinstance(Cell, str) and Cell.endswith(" %"):
+                Cell = Cell[:-2]
+                Cell = Cell.replace(",", ".")
+            Output_Sheet.write(Previous_Position + j, i + 3, Cell)
+
+    Excel_Output.save(Output_Name)
+
 if __name__ == "__main__":
-    Replace_FLowJo_Output("/Users/siddarthraghuvanshi/Documents/Undergraduate/2019 Summer Job/Zandstra Lab/FlowJoOutput_PreFormat copy.xls", "Test")
+
+    parser = argparse.ArgumentParser(description="Get FlowJo Files to convert into Excel Output")
+    parser.add_argument("Input_File", help='Path to the FlowJo Excel File ')
+    parser.add_argument("Output_File", help= """Desired Path to the Output Excel File or Path
+                                                          to the current Excel File you would like to append data to""")
+
+    args = parser.parse_args()
+
+    Replace_FLowJo_Output(args.Input_File, args.Output_File)
