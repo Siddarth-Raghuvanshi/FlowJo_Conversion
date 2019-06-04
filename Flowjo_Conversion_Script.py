@@ -5,6 +5,8 @@ import xlwt
 
 def Replace_FLowJo_Output(Input_Name, Output_Name):
 
+    if Output_Name is None:
+        Output_Name = Input_Name[:-4] + "_converted.xls"
     FlowJo = xlrd.open_workbook(Input_Name)
     FlowJo_Sheet = FlowJo.sheet_by_index(0)
 
@@ -31,12 +33,14 @@ def Replace_FLowJo_Output(Input_Name, Output_Name):
     Output_Sheet.write(Previous_Position + 0,2, "Well Label")
 
     for i, Run_name in enumerate(FlowJo_Sheet.col_values(0)):
-        Output_Sheet.write(Previous_Position + i + 1, 0, Run_name[3:-7])
-        Output_Sheet.write(Previous_Position + i + 1, 1, Run_name[:2])
-        Output_Sheet.write(Previous_Position + i + 1, 2, Run_name[-6:-4])
-        if (FlowJo_Sheet.cell(i+2,0).value == "Mean"):
+        if i == 0:
+            continue
+        Output_Sheet.write(Previous_Position + i, 0, Run_name[3:Run_name.rfind("-")-len(Run_name)])
+        Output_Sheet.write(Previous_Position + i, 1, Run_name[:2])
+        Output_Sheet.write(Previous_Position + i, 2, Run_name[Run_name.rfind("-")-len(Run_name)+1:-4])
+        if (FlowJo_Sheet.cell(i+1,0).value == "Mean"):
+            Output_Sheet.write(Previous_Position + i + 1, 0, FlowJo_Sheet.cell(i+1,0).value)
             Output_Sheet.write(Previous_Position + i + 2, 0, FlowJo_Sheet.cell(i+2,0).value)
-            Output_Sheet.write(Previous_Position + i + 3, 0, FlowJo_Sheet.cell(i+3,0).value)
             break
 
     for i in range(FlowJo_Sheet.ncols - 1):
@@ -51,10 +55,12 @@ def Replace_FLowJo_Output(Input_Name, Output_Name):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Get FlowJo Files to convert into Excel Output")
-    parser.add_argument("Input_File", help='Path to the FlowJo Excel File ')
-    parser.add_argument("Output_File", help= """Desired Path to the Output Excel File or Path
+    parser.add_argument( "Input_Files", nargs='+', help='Path to the FlowJo Excel File ')
+    parser.add_argument("-O", "--Output_File", metavar = "", help= """Desired Path to the Output Excel File or Path
                                                           to the current Excel File you would like to append data to""")
 
     args = parser.parse_args()
-
-    Replace_FLowJo_Output(args.Input_File, args.Output_File)
+    for File in args.Input_Files:
+        print(File)
+        print(args.Output_File)
+        Replace_FLowJo_Output(File, args.Output_File)
