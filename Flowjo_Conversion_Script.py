@@ -2,6 +2,8 @@ import argparse
 import xlrd
 from xlutils.copy import copy
 import xlwt
+import pandas as pd
+import statistics
 
 def Replace_FLowJo_Output(Input_Name, Output_Name):
 
@@ -32,23 +34,51 @@ def Replace_FLowJo_Output(Input_Name, Output_Name):
     Output_Sheet.write(Previous_Position + 0,1, "Plate Number")
     Output_Sheet.write(Previous_Position + 0,2, "Well Label")
 
+    Replicates = []
+    index = 1
     for i, Run_name in enumerate(FlowJo_Sheet.col_values(0)):
-        if i == 0:
+        if (FlowJo_Sheet.cell(i+1,0).value[3:FlowJo_Sheet.cell(i+1,0).value.rfind("-")-len(FlowJo_Sheet.cell(i+1,0).value)-2] == Run_name[3:Run_name.rfind("-")-len(Run_name)]):
+            Replicates.append(True)
+        else:
+            Replicates.append(False)
+        if i == 0 or Replicates[i-1]:
             continue
-        Output_Sheet.write(Previous_Position + i, 0, Run_name[3:Run_name.rfind("-")-len(Run_name)])
-        Output_Sheet.write(Previous_Position + i, 1, Run_name[:2])
-        Output_Sheet.write(Previous_Position + i, 2, Run_name[Run_name.rfind("-")-len(Run_name)+1:-4])
+        Output_Sheet.write(Previous_Position + index, 0, Run_name[3:Run_name.rfind("-")-len(Run_name)])
+        Output_Sheet.write(Previous_Position + index, 1, Run_name[:2])
+        Output_Sheet.write(Previous_Position + index, 2, Run_name[Run_name.rfind("-")-len(Run_name)+1:-4])
         if (FlowJo_Sheet.cell(i+1,0).value == "Mean"):
-            Output_Sheet.write(Previous_Position + i + 1, 0, FlowJo_Sheet.cell(i+1,0).value)
-            Output_Sheet.write(Previous_Position + i + 2, 0, FlowJo_Sheet.cell(i+2,0).value)
+            Output_Sheet.write(Previous_Position + index + 1, 0, FlowJo_Sheet.cell(i+1,0).value)
+            Output_Sheet.write(Previous_Position + index + 2, 0, FlowJo_Sheet.cell(i+2,0).value)
+            Replicates.extend([False,False])
             break
+        index += 1
 
     for i in range(FlowJo_Sheet.ncols - 1):
+        index = 1
+        print("Value of Row" + str(i))
         for j, Cell in enumerate(FlowJo_Sheet.col_values(i+1)):
+            if j == 0:
+                Output_Sheet.write(Previous_Position + j, i + 3, Cell)
+                continue
+            if Replicates[j-1]:
+                continue
             if isinstance(Cell, str) and Cell.endswith(" %"):
                 Cell = Cell[:-2]
                 Cell = Cell.replace(",", ".")
-            Output_Sheet.write(Previous_Position + j, i + 3, Cell)
+            Values = []
+            Values.append(float(Cell))
+            k = 0
+            while Replicates[j+k]:
+                Next_Cell = FlowJo_Sheet.cell_value(j+k+1, i+1)
+                if isinstance(Next_Cell, str) and Next_Cell.endswith(" %"):
+                    Next_Cell = Next_Cell[:-2]
+                    Next_Cell = Next_Cell.replace(",", ".")
+                Values.append(float(Next_Cell))
+                k += 1
+            print(Values)
+            Cell_Value = statistics.mean(Values)
+            Output_Sheet.write(Previous_Position + index, i + 3, Cell_Value)
+            index += 1
 
     Excel_Output.save(Output_Name)
 
@@ -61,6 +91,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     for File in args.Input_Files:
-        print(File)
-        print(args.Output_File)
         Replace_FLowJo_Output(File, args.Output_File)
