@@ -5,6 +5,7 @@ import xlwt
 import pandas as pd
 import statistics
 
+#God I wish I knew about Pandas before writing this
 def Replace_FLowJo_Output(Input_Name, Output_Name):
 
     if Output_Name is None:
@@ -55,7 +56,6 @@ def Replace_FLowJo_Output(Input_Name, Output_Name):
 
     for i in range(FlowJo_Sheet.ncols - 1):
         index = 1
-        print("Value of Row" + str(i))
         for j, Cell in enumerate(FlowJo_Sheet.col_values(i+1)):
             if j == 0:
                 Output_Sheet.write(Previous_Position + j, i + 3, Cell)
@@ -75,12 +75,17 @@ def Replace_FLowJo_Output(Input_Name, Output_Name):
                     Next_Cell = Next_Cell.replace(",", ".")
                 Values.append(float(Next_Cell))
                 k += 1
-            print(Values)
             Cell_Value = statistics.mean(Values)
             Output_Sheet.write(Previous_Position + index, i + 3, Cell_Value)
             index += 1
 
     Excel_Output.save(Output_Name)
+
+    #New Pandas code, it works and this isn't that urgent code
+    Results = pd.read_excel(Output_Name, header = 0)
+    Results = Result.sort(columns="Well Label")
+
+    Results.to_excel(Output_Name)
 
 if __name__ == "__main__":
 
