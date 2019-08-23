@@ -81,15 +81,6 @@ def Replace_FLowJo_Output(Input_Name, Output_Name):
 
     Excel_Output.save(Output_Name)
 
-    #New Pandas code, it works and this isn't that urgent code
-    Results = pd.read_excel(Output_Name)
-
-    Temp_Frame = Results[["Plate Number","Well Label"]]
-    Temp_Frame["Well Label"] = pd.to_numeric(Temp_Frame["Well Label"].str.replace('[a-zA-Z]', ''), errors="coerce")
-    Temp_Frame = Temp_Frame.sort_values(by = ["Plate Number","Well Label"])
-
-    Results.reindex(Temp_Frame.index).to_excel(Output_Name)
-
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Get FlowJo Files to convert into Excel Output")
