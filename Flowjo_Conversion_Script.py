@@ -4,7 +4,6 @@ from xlutils.copy import copy
 import xlwt
 import pandas as pd
 import statistics
-from natsort import natsorted, order_by_index, index_natsorted
 
 #God I wish I knew about Pandas before writing this
 def Replace_FLowJo_Output(Input_Name, Output_Name):
@@ -85,12 +84,11 @@ def Replace_FLowJo_Output(Input_Name, Output_Name):
     #New Pandas code, it works and this isn't that urgent code
     Results = pd.read_excel(Output_Name)
 
-    Results = Results.reindex(index=order_by_index
-                              (Results.index,
-                               index_natsorted(
-                                   zip(Results["Plate Number"], Results["Well Label"]))))
+    Temp_Frame = Results[["Plate Number","Well Label"]]
+    Temp_Frame["Well Label"] = pd.to_numeric(Temp_Frame["Well Label"].str.replace('[a-zA-Z]', ''), errors="coerce")
+    Temp_Frame = Temp_Frame.sort_values(by = ["Plate Number","Well Label"])
 
-    Results.to_excel(Output_Name, index=False)
+    Results.reindex(Temp_Frame.index).to_excel(Output_Name)
 
 if __name__ == "__main__":
 
